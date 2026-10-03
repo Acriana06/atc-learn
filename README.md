@@ -1,16 +1,33 @@
-# atc_learn
+# ATC Learn
 
-Interactive study and quiz app for EATCA ATC trainees
+ATC Learn is a Flutter-based mobile application designed to support Air Traffic Control trainees at EATCA.
 
-## Getting Started
+It provides interactive study modules, practice quizzes, instant feedback, and progress tracking to help trainees revise course content and identify weak areas.
 
-This project is a starting point for a Flutter application.
+## Features
 
-A few resources to get you started if this is your first Flutter project:
+- Trainee login and profile
+- Study modules and short lessons
+- Multiple-choice quizzes
+- Instant answer explanations
+- Progress tracking by module
+- Instructor question management
+- Mock exam mode (planned)
+- Offline revision support (planned)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Technology Stack
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- Flutter
+- Dart
+- Firebase Authentication
+- Cloud Firestore
+- Provider
+- Android Studio
+
+## Project Status
+
+Under development.
+
+## Disclaimer
+
+This application is a training and revision support tool. It is not intended for live air traffic control operations or official certification assessment.
