@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
+import '../quiz/quiz_screen.dart';
 
 class ModuleDetailScreen extends StatelessWidget {
   final String moduleTitle;
@@ -113,6 +114,19 @@ class ModuleDetailScreen extends StatelessWidget {
                   );
                 },
               ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => QuizScreen(moduleTitle: moduleTitle),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.quiz),
+              label: const Text('Take Module Quiz'),
             ),
           ],
         ),
