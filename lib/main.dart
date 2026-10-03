@@ -27,6 +27,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:Colors.blue[300] ,
       appBar: AppBar(
         title: const Text('ATC Learn'),
       ),
