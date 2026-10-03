@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
+import 'package:atc_learn/views/modules/module_detail_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -62,7 +63,15 @@ class HomeScreen extends StatelessWidget {
                 labelStyle: const TextStyle(color: AppColors.secondary),
               ),
               onTap: () {
-                // TODO: Navigate to module detail or quiz
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ModuleDetailScreen(
+                      moduleTitle: module['title']!,
+                      moduleDescription: module['desc']!,
+                    ),
+                  ),
+                );
               },
             ),
           );
