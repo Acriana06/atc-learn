@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
+import 'package:provider/provider.dart';
+import '../../providers/progress_provider.dart';
 
 class QuizScreen extends StatefulWidget {
   final String moduleTitle;
@@ -87,6 +89,10 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void _showResultsDialog() {
+    // Record the attempt in the provider
+    Provider.of<ProgressProvider>(context, listen: false)
+        .recordQuizAttempt(widget.moduleTitle, _score, _questions.length);
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -99,8 +105,8 @@ class _QuizScreenState extends State<QuizScreen> {
         actions: [
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Return to previous screen
             },
             child: const Text('Finish'),
           ),
