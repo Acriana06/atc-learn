@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import 'package:atc_learn/views/modules/module_detail_screen.dart';
 import '../progress/progress_screen.dart';
+import '../auth/login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -30,6 +31,18 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('ATC Learn - Study Modules'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            tooltip: 'Account',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LoginScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.bar_chart),
             tooltip: 'View Progress',
