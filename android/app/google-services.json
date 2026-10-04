@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "300734970067",
+    "project_id": "atc-learn",
+    "storage_bucket": "atc-learn.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:300734970067:android:6c95ead80c3b269fb6bc26",
+        "android_client_info": {
+          "package_name": "com.example.atc_learn"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBt4WZm9lmflsH0ve65eIWps4Xzr9E4ZAo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

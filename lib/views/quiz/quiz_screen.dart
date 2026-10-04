@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../constants/app_colors.dart';
 import '../../providers/progress_provider.dart';
 
 class QuizScreen extends StatefulWidget {
@@ -88,10 +89,22 @@ class _QuizScreenState extends State<QuizScreen> {
     });
   }
 
-  void _showResultsDialog() {
-    // Record the attempt in the provider
-    Provider.of<ProgressProvider>(context, listen: false)
-        .recordQuizAttempt(widget.moduleTitle, _score, _questions.length);
+  void _showResultsDialog() async {
+    // Record quiz attempt via Provider (which automatically saves to Supabase PostgreSQL)
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser != null) {
+      try {
+        await Provider.of<ProgressProvider>(context, listen: false).recordQuizAttempt(
+          widget.moduleTitle,
+          _score,
+          _questions.length,
+        );
+      } catch (e) {
+        debugPrint('Error saving module progress: $e');
+      }
+    }
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -99,7 +112,7 @@ class _QuizScreenState extends State<QuizScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Quiz Completed! 🎉'),
         content: Text(
-          'You scored $_score out of ${_questions.length}!',
+          'You scored $_score out of ${_questions.length} in ${widget.moduleTitle}!',
           style: const TextStyle(fontSize: 16),
         ),
         actions: [
@@ -137,7 +150,6 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
             ),
             const SizedBox(height: 12),
-
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
@@ -156,7 +168,6 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
             ),
             const SizedBox(height: 20),
-
             Expanded(
               child: ListView.builder(
                 itemCount: (currentQuestion['options'] as List).length,
@@ -204,8 +215,6 @@ class _QuizScreenState extends State<QuizScreen> {
                 },
               ),
             ),
-
-            // Explanation Section (shown after answering)
             if (_answered) ...[
               Container(
                 padding: const EdgeInsets.all(12),
@@ -223,8 +232,6 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
               const SizedBox(height: 12),
             ],
-
-            // Next / Continue Button
             ElevatedButton(
               onPressed: _answered ? _nextQuestion : null,
               child: Text(
