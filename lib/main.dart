@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
-import 'constants/app_themes.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'constants/app_themes.dart'; // Your custom themes file
 import 'providers/progress_provider.dart';
 import 'views/home/home_screen.dart';
 
 Future<void> main() async {
-  // 1. Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Initialize Supabase (replacing Firebase)
   await Supabase.initialize(
     url: 'https://rboicreqcitwjpzbigpa.supabase.co',
     publishableKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJib2ljcmVxY2l0d2pwemJpZ3BhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExMzM1ODQsImV4cCI6MjEwNjcwOTU4NH0.RquMeMU_2lU6CUwRplsVkZJ6XsJWUcDe-X0t5BSDCu4',
@@ -28,13 +26,24 @@ Future<void> main() async {
 class ATCLearnApp extends StatelessWidget {
   const ATCLearnApp({super.key});
 
+  static final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ATC Learn',
-      debugShowCheckedModeBanner: false,
-      theme: AppThemes.lightTheme,
-      home: const HomeScreen(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (_, ThemeMode currentMode, __) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'ATC Learn',
+          // Using your custom themes from app_themes.dart
+          // (Adjust property names like lightTheme/darkTheme if they differ in your file)
+          theme: AppThemes.lightTheme,
+          darkTheme: AppThemes.darkTheme,
+          themeMode: currentMode,
+          home: HomeScreen(),
+        );
+      },
     );
   }
 }
