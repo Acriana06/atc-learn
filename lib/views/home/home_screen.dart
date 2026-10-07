@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
+import '../../main.dart'; // Import main.dart for ATCLearnApp.themeNotifier
 import 'package:atc_learn/views/modules/module_detail_screen.dart';
 import '../progress/progress_screen.dart';
 import '../auth/login_screen.dart';
@@ -27,6 +28,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('ATC Learn - Study Modules'),
@@ -55,6 +58,21 @@ class HomeScreen extends StatelessWidget {
               );
             },
           ),
+          // Dynamic theme toggle icon that updates when clicked
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ATCLearnApp.themeNotifier,
+            builder: (context, currentMode, child) {
+              final isDark = currentMode == ThemeMode.dark;
+              return IconButton(
+                icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+                tooltip: 'Toggle Theme',
+                onPressed: () {
+                  ATCLearnApp.themeNotifier.value =
+                  isDark ? ThemeMode.light : ThemeMode.dark;
+                },
+              );
+            },
+          ),
         ],
       ),
       body: ListView.builder(
@@ -72,17 +90,21 @@ class HomeScreen extends StatelessWidget {
               contentPadding: const EdgeInsets.all(16.0),
               title: Text(
                 module['title']!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  // Explicitly switches between custom primary color and high-contrast white
+                  color: isDarkMode ? Colors.white : AppColors.textPrimary,
                 ),
               ),
               subtitle: Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
                   module['desc']!,
-                  style: const TextStyle(color: AppColors.textSecondary),
+                  style: TextStyle(
+                    // Explicitly switches subtitle contrast based on mode
+                    color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+                  ),
                 ),
               ),
               trailing: Chip(
