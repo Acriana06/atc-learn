@@ -14,7 +14,8 @@ class ModuleDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Sample lessons for the module
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     final List<String> lessons = [
       'Lesson 1: Introduction & Fundamentals',
       'Lesson 2: Standard Operating Procedures',
@@ -34,8 +35,12 @@ class ModuleDetailScreen extends StatelessWidget {
             // Description Card
             Card(
               elevation: 1,
+              color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
+                side: isDarkMode
+                    ? BorderSide(color: Colors.white.withOpacity(0.1), width: 1)
+                    : BorderSide.none,
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -53,9 +58,9 @@ class ModuleDetailScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       moduleDescription,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textSecondary,
+                        color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
                         height: 1.4,
                       ),
                     ),
@@ -64,12 +69,12 @@ class ModuleDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Course Lessons',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: isDarkMode ? Colors.white : AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 12),
@@ -80,11 +85,14 @@ class ModuleDetailScreen extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return Card(
                     elevation: 0,
+                    color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
                     margin: const EdgeInsets.only(bottom: 8.0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                       side: BorderSide(
-                        color: AppColors.textSecondary.withOpacity(0.2),
+                        color: isDarkMode
+                            ? Colors.white.withOpacity(0.15)
+                            : AppColors.textSecondary.withOpacity(0.2),
                       ),
                     ),
                     child: ListTile(
@@ -97,18 +105,18 @@ class ModuleDetailScreen extends StatelessWidget {
                       ),
                       title: Text(
                         lessons[index],
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
+                          color: isDarkMode ? Colors.white : AppColors.textPrimary,
                         ),
                       ),
-                      trailing: const Icon(
+                      trailing: Icon(
                         Icons.arrow_forward_ios,
                         size: 16,
-                        color: AppColors.textSecondary,
+                        color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
                       ),
                       onTap: () {
-                        // TODO: Open specific lesson content or quiz
+                        // TODO: Open specific lesson content
                       },
                     ),
                   );

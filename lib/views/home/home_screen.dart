@@ -83,8 +83,14 @@ class HomeScreen extends StatelessWidget {
           return Card(
             elevation: 2,
             margin: const EdgeInsets.only(bottom: 16.0),
+            // Make the card background theme-aware
+            color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
+              // Optional: add a subtle border in dark mode for extra definition
+              side: isDarkMode
+                  ? BorderSide(color: Colors.white.withOpacity(0.1), width: 1)
+                  : BorderSide.none,
             ),
             child: ListTile(
               contentPadding: const EdgeInsets.all(16.0),

@@ -86,6 +86,8 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.moduleTitle} Quiz'),
@@ -104,7 +106,10 @@ class _QuizScreenState extends State<QuizScreen> {
                 child: Text(
                   'No questions available for ${widget.moduleTitle} yet.',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+                  ),
                 ),
               ),
             );
@@ -112,7 +117,6 @@ class _QuizScreenState extends State<QuizScreen> {
 
           final questions = snapshot.data!;
           final currentQuestion = questions[_currentQuestionIndex];
-          // Supabase JSONB options can be cast as a List
           final options = List<String>.from(currentQuestion['options']);
 
           return Padding(
@@ -122,26 +126,30 @@ class _QuizScreenState extends State<QuizScreen> {
               children: [
                 Text(
                   'Question ${_currentQuestionIndex + 1} of ${questions.length}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textSecondary,
+                    color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Card(
                   elevation: 2,
+                  color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
+                    side: isDarkMode
+                        ? BorderSide(color: Colors.white.withOpacity(0.1), width: 1)
+                        : BorderSide.none,
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Text(
                       currentQuestion['question_text'],
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: isDarkMode ? Colors.white : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -153,15 +161,17 @@ class _QuizScreenState extends State<QuizScreen> {
                     itemBuilder: (context, index) {
                       final optionText = options[index];
 
-                      Color cardColor = AppColors.surface;
-                      Color borderColor = AppColors.textSecondary.withOpacity(0.2);
+                      Color cardColor = isDarkMode ? const Color(0xFF1E1E1E) : AppColors.surface;
+                      Color borderColor = isDarkMode
+                          ? Colors.white.withOpacity(0.15)
+                          : AppColors.textSecondary.withOpacity(0.2);
 
                       if (_answered) {
                         if (index == currentQuestion['correct_answer_index']) {
-                          cardColor = AppColors.success.withOpacity(0.15);
+                          cardColor = AppColors.success.withOpacity(0.25);
                           borderColor = AppColors.success;
                         } else if (index == _selectedAnswerIndex) {
-                          cardColor = AppColors.error.withOpacity(0.15);
+                          cardColor = AppColors.error.withOpacity(0.25);
                           borderColor = AppColors.error;
                         }
                       }
@@ -182,7 +192,7 @@ class _QuizScreenState extends State<QuizScreen> {
                               optionText,
                               style: TextStyle(
                                 fontSize: 15,
-                                color: AppColors.textPrimary,
+                                color: isDarkMode ? Colors.white : AppColors.textPrimary,
                                 fontWeight: index == currentQuestion['correct_answer_index'] && _answered
                                     ? FontWeight.bold
                                     : FontWeight.normal,
@@ -198,14 +208,14 @@ class _QuizScreenState extends State<QuizScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.secondary.withOpacity(0.1),
+                      color: AppColors.secondary.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       'Explanation: ${currentQuestion['explanation']}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textPrimary,
+                        color: isDarkMode ? Colors.white : AppColors.textPrimary,
                       ),
                     ),
                   ),
