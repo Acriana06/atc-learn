@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'constants/app_themes.dart'; // Your custom themes file
 import 'providers/progress_provider.dart';
-import 'views/home/home_screen.dart';
+import 'views/main_layout.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,12 +36,10 @@ class ATCLearnApp extends StatelessWidget {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'ATC Learn',
-          // Using your custom themes from app_themes.dart
-          // (Adjust property names like lightTheme/darkTheme if they differ in your file)
           theme: AppThemes.lightTheme,
           darkTheme: AppThemes.darkTheme,
           themeMode: currentMode,
-          home: HomeScreen(),
+          home: const MainLayout(),
         );
       },
     );
