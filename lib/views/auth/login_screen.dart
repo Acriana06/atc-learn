@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
-import '../../services/auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,10 +11,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
-
+  bool _isSignUp = false;
   bool _isLoading = false;
-  bool _isRegistering = false; // Toggle between Login and Sign Up
 
   @override
   void dispose() {
@@ -24,121 +21,113 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _submitAuthForm() async {
-    String email = _emailController.text.trim();
-    String password = _passwordController.text.trim();
+  Future<void> _submit() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
+        const SnackBar(content: Text('Please enter both email and password.')),
       );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      if (_isRegistering) {
-        // Calls Supabase signUp method
-        await _authService.signUp(email: email, password: password);
+      final supabase = Supabase.instance.client;
+      if (_isSignUp) {
+        await supabase.auth.signUp(email: email, password: password);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registration successful! Check your email to confirm.')),
+          );
+        }
       } else {
-        // Calls Supabase signIn method
-        await _authService.signIn(email: email, password: password);
+        await supabase.auth.signInWithPassword(email: email, password: password);
       }
-
+    } on AuthException catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Return to home/previous screen on success
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: Theme.of(context).colorScheme.error),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-          ),
+          SnackBar(content: Text('Unexpected error occurred.'), backgroundColor: Theme.of(context).colorScheme.error),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isRegistering ? 'Trainee Registration' : 'Trainee Login'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Icon(
-              Icons.airplanemode_active,
-              size: 64,
-              color: AppColors.primary,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              _isRegistering ? 'Create New Account' : 'Welcome Back, Trainee',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Icon(Icons.connecting_airports, size: 72, color: theme.colorScheme.primary),
+              const SizedBox(height: 16),
+              Text(
+                'ATC Learn',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 32),
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: 'Email Address',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+              const SizedBox(height: 8),
+              Text(
+                _isSignUp ? 'Create a trainee account' : 'Sign in to continue training',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 32),
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
-              obscureText: true,
-            ),
-            const SizedBox(height: 24),
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ElevatedButton(
-              onPressed: _submitAuthForm,
-              child: Text(_isRegistering ? 'Sign Up' : 'Sign In'),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _isRegistering = !_isRegistering;
-                });
-              },
-              child: Text(
-                _isRegistering
-                    ? 'Already have an account? Sign In'
-                    : 'Need an account? Sign Up',
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(_isSignUp ? 'Sign Up' : 'Sign In', style: const TextStyle(fontSize: 16)),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => setState(() => _isSignUp = !_isSignUp),
+                child: Text(_isSignUp ? 'Already have an account? Sign In' : 'New trainee? Create an account'),
+              ),
+            ],
+          ),
         ),
       ),
     );
