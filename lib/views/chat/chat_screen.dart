@@ -14,6 +14,9 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
 
   List<Map<String, String>> _messages = [];
+  List<Map<String, dynamic>> _sessions = [];
+  String? _currentSessionId;
+
   bool _isLoading = false;
   bool _isFetchingHistory = true;
 
@@ -28,7 +31,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _loadChatHistory();
+    _initializeChatSessions();
   }
 
   @override
@@ -38,8 +41,8 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  // Load chat history from Supabase Postgres
-  Future<void> _loadChatHistory() async {
+  // Fetch all chat sessions for the user
+  Future<void> _initializeChatSessions() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
       setState(() => _isFetchingHistory = false);
@@ -48,8 +51,73 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       final response = await Supabase.instance.client
+          .from('chat_sessions')
+          .select('id, title, created_at')
+          .order('created_at', ascending: false);
+
+      final sessionsList = List<Map<String, dynamic>>.from(response);
+
+      setState(() {
+        _sessions = sessionsList;
+      });
+
+      if (_sessions.isNotEmpty) {
+        // Load the most recent session by default
+        await _loadSessionMessages(_sessions.first['id']);
+      } else {
+        // Create a new session if none exist
+        await _createNewSession(initialMessage: false);
+      }
+    } catch (e) {
+      debugPrint('Error loading chat sessions: $e');
+      setState(() => _isFetchingHistory = false);
+    }
+  }
+
+  // Create a brand new chat session
+  Future<void> _createNewSession({bool initialMessage = true}) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final response = await Supabase.instance.client
+          .from('chat_sessions')
+          .insert({
+        'user_id': user.id,
+        'title': 'New Chat',
+      })
+          .select()
+          .single();
+
+      setState(() {
+        _sessions.insert(0, response);
+        _currentSessionId = response['id'];
+        _messages = [
+          {
+            'sender': 'ai',
+            'text':
+            'Hello! Ask me any ATC phraseology or procedural question, or select a topic below to get started.'
+          }
+        ];
+        _isFetchingHistory = false;
+      });
+    } catch (e) {
+      debugPrint('Error creating session: $e');
+    }
+  }
+
+  // Load messages for a specific session ID
+  Future<void> _loadSessionMessages(String sessionId) async {
+    setState(() {
+      _currentSessionId = sessionId;
+      _isFetchingHistory = true;
+    });
+
+    try {
+      final response = await Supabase.instance.client
           .from('chat_messages')
           .select('sender, content')
+          .eq('session_id', sessionId)
           .order('created_at', ascending: true);
 
       final loadedMessages = (response as List).map((msg) {
@@ -73,24 +141,41 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       });
     } catch (e) {
-      debugPrint('Error loading chat history: $e');
+      debugPrint('Error loading session messages: $e');
     } finally {
       setState(() => _isFetchingHistory = false);
       _scrollToBottom();
     }
   }
 
-  // Save message to Supabase Postgres
+  // Save message to Supabase Postgres bound to current session
   Future<void> _saveMessageToDb(String sender, String text) async {
     final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
+    if (user == null || _currentSessionId == null) return;
 
     try {
       await Supabase.instance.client.from('chat_messages').insert({
+        'session_id': _currentSessionId,
         'user_id': user.id,
         'sender': sender,
         'content': text,
       });
+
+      // If it's the first user message, update the session title to match text preview
+      if (sender == 'user' && _messages.where((m) => m['sender'] == 'user').length == 1) {
+        final title = text.length > 25 ? '${text.substring(0, 25)}...' : text;
+        await Supabase.instance.client
+            .from('chat_sessions')
+            .update({'title': title})
+            .eq('id', _currentSessionId!);
+
+        setState(() {
+          final sessionIndex = _sessions.indexWhere((s) => s['id'] == _currentSessionId);
+          if (sessionIndex != -1) {
+            _sessions[sessionIndex]['title'] = title;
+          }
+        });
+      }
     } catch (e) {
       debugPrint('Error saving message to DB: $e');
     }
@@ -170,6 +255,88 @@ class _ChatScreenState extends State<ChatScreen> {
           style: TextStyle(color: theme.colorScheme.onSurface),
         ),
         backgroundColor: theme.colorScheme.surface,
+        iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
+      ),
+      drawer: Drawer(
+        backgroundColor: theme.colorScheme.surface,
+        child: Column(
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.chat_bubble_outline,
+                        size: 40, color: theme.colorScheme.primary),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Chat Sessions',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context); // Close drawer
+                  _createNewSession();
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('New Chat'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(45),
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  foregroundColor: theme.colorScheme.onPrimaryContainer,
+                ),
+              ),
+            ),
+            const Divider(),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _sessions.length,
+                itemBuilder: (context, index) {
+                  final session = _sessions[index];
+                  final isSelected = session['id'] == _currentSessionId;
+
+                  return ListTile(
+                    selected: isSelected,
+                    selectedTileColor: theme.colorScheme.primaryContainer.withOpacity(0.3),
+                    leading: Icon(Icons.history,
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant),
+                    title: Text(
+                      session['title'] ?? 'Untitled Chat',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurface,
+                        fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context); // Close drawer
+                      _loadSessionMessages(session['id']);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 110.0),
@@ -188,7 +355,6 @@ class _ChatScreenState extends State<ChatScreen> {
       )
           : Column(
         children: [
-          // Chat Message List
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
