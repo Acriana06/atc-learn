@@ -1,142 +1,209 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../constants/app_colors.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import '../../services/ai_service.dart';
 
 class AiTutorScreen extends StatefulWidget {
-  final String moduleTitle;
-
-  const AiTutorScreen({super.key, required this.moduleTitle});
+  const AiTutorScreen({Key? key}) : super(key: key);
 
   @override
   State<AiTutorScreen> createState() => _AiTutorScreenState();
 }
 
+class ChatMessage {
+  final String text;
+  final bool isUser;
+  final DateTime timestamp;
+
+  ChatMessage({
+    required this.text,
+    required this.isUser,
+    required this.timestamp,
+  });
+}
+
 class _AiTutorScreenState extends State<AiTutorScreen> {
   final TextEditingController _controller = TextEditingController();
-  final List<Map<String, String>> _messages = [];
+  final ScrollController _scrollController = ScrollController();
+  final List<ChatMessage> _messages = [];
   bool _isLoading = false;
+
+  final List<String> _quickPrompts = [
+    "How do I issue a standard IFR departure clearance?",
+    "What are standard vertical separation rules?",
+    "Explain runway separation minima for arrivals",
+    "Show me an example in Addis Ababa (HAAB) airspace"
+  ];
 
   @override
   void initState() {
     super.initState();
-    // Add an initial greeting message from the AI tutor
-    _messages.add({
-      'role': 'ai',
-      'text': 'Hello! I am your EATCA AI Study Tutor. Ask me anything about ${widget.moduleTitle}, regulations, or standard operating procedures!',
+    _addInitialGreeting();
+  }
+
+  void _addInitialGreeting() {
+    _messages.add(
+      ChatMessage(
+        text: "**ATC Agent Online.**\nWelcome, Controller. Ask any global ICAO procedure, phraseology, or clearance question to begin.",
+        isUser: false,
+        timestamp: DateTime.now(),
+      ),
+    );
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     });
   }
 
-  Future<void> _sendMessage() async {
-    final text = _controller.text.trim();
+  Future<void> _sendMessage([String? customPrompt]) async {
+    final text = customPrompt ?? _controller.text.trim();
     if (text.isEmpty || _isLoading) return;
 
-    _controller.clear();
+    if (customPrompt == null) {
+      _controller.clear();
+    }
+
     setState(() {
-      _messages.add({'role': 'user', 'text': text});
+      _messages.add(ChatMessage(
+        text: text,
+        isUser: true,
+        timestamp: DateTime.now(),
+      ));
       _isLoading = true;
     });
 
-    try {
-      // Invoke your Supabase Edge Function securely
-      final response = await Supabase.instance.client.functions.invoke(
-        'ai-tutor',
-        body: {
-          'prompt': text,
-          'moduleTitle': widget.moduleTitle,
-        },
-      );
+    _scrollToBottom();
 
-      if (response.status == 200 && response.data != null) {
-        final reply = response.data['reply'] ?? 'No response received.';
-        setState(() {
-          _messages.add({'role': 'ai', 'text': reply});
-        });
-      } else {
-        throw Exception('Failed to fetch AI response');
-      }
-    } catch (e) {
-      setState(() {
-        _messages.add({
-          'role': 'ai',
-          'text': 'Sorry, I encountered an error connecting to the tutor service. Please try again.',
-        });
-      });
-      debugPrint('AI Tutor Error: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    // Map existing history payload for context-aware multi-turn agent response
+    final historyPayload = _messages
+        .take(_messages.length - 1)
+        .map((m) => ChatMessagePayload(text: m.text, isUser: m.isUser))
+        .toList();
+
+    final reply = await AiService.fetchAiTutorResponse(
+      userPrompt: text,
+      history: historyPayload,
+    );
+
+    setState(() {
+      _isLoading = false;
+      _messages.add(ChatMessage(
+        text: reply ?? "Sorry, I couldn't reach the AI tutor right now. Please check your connection.",
+        isUser: false,
+        timestamp: DateTime.now(),
+      ));
+    });
+
+    _scrollToBottom();
+  }
+
+  void _clearChat() {
+    setState(() {
+      _messages.clear();
+      _addInitialGreeting();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.moduleTitle} Tutor'),
+        title: const Row(
+          children: [
+            Icon(Icons.radar, color: Colors.cyanAccent),
+            SizedBox(width: 8),
+            Text("Agentic ATC Tutor"),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: "Clear Session",
+            onPressed: _clearChat,
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // Chat message list
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: _messages.length,
+          Container(
+            height: 55,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              scrollDirection: Axis.horizontal,
+              itemCount: _quickPrompts.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
-                final message = _messages[index];
-                final isUser = message['role'] == 'user';
-
-                return Align(
-                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 12.0),
-                    padding: const EdgeInsets.all(14.0),
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.75,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isUser
-                          ? AppColors.primary
-                          : (isDarkMode ? const Color(0xFF1E1E1E) : Colors.white),
-                      borderRadius: BorderRadius.circular(12),
-                      border: !isUser && isDarkMode
-                          ? Border.all(color: Colors.white.withOpacity(0.1))
-                          : null,
-                      boxShadow: [
-                        if (!isUser && !isDarkMode)
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                      ],
-                    ),
-                    child: Text(
-                      message['text']!,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: isUser
-                            ? Colors.white
-                            : (isDarkMode ? Colors.white : AppColors.textPrimary),
-                        height: 1.4,
-                      ),
+                final prompt = _quickPrompts[index];
+                return ActionChip(
+                  label: Text(
+                    prompt,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
+                  backgroundColor: Colors.cyan.shade900,
+                  side: const BorderSide(color: Colors.cyanAccent, width: 0.8),
+                  onPressed: () => _sendMessage(prompt),
                 );
               },
             ),
           ),
+          const Divider(height: 1),
+
+          // Message Stream
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final msg = _messages[index];
+                return _buildMessageBubble(msg);
+              },
+            ),
+          ),
+
           if (_isLoading)
             const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: LinearProgressIndicator(),
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent),
+                  ),
+                  SizedBox(width: 10),
+                  Text("ATC Agent processing response...", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                ],
+              ),
             ),
-          // Input bar
+
+          // Message Input Field
           Container(
-            padding: const EdgeInsets.all(12.0),
-            color: isDarkMode ? const Color(0xFF121212) : Colors.grey[100],
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -145,32 +212,112 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => _sendMessage(),
                     decoration: InputDecoration(
-                      hintText: 'Ask a question about this module...',
-                      filled: true,
-                      fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                      hintText: "Ask ATC Agent...",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: AppColors.primary,
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white, size: 18),
-                    onPressed: _sendMessage,
-                  ),
+                IconButton.filled(
+                  icon: const Icon(Icons.send_rounded),
+                  color: Colors.black,
+                  style: IconButton.styleFrom(backgroundColor: Colors.cyanAccent),
+                  onPressed: () => _sendMessage(),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(ChatMessage msg) {
+    final isUser = msg.isUser;
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          // High contrast dark blue-grey for assistant, deep cyan for user
+          color: isUser ? Colors.cyan.shade800 : const Color(0xFF1E293B),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(isUser ? 16 : 2),
+            bottomRight: Radius.circular(isUser ? 2 : 16),
+          ),
+          border: Border.all(
+            color: isUser ? Colors.cyan.shade400 : Colors.blueGrey.shade600,
+            width: 0.8,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isUser ? Icons.person : Icons.smart_toy,
+                  size: 14,
+                  color: isUser ? Colors.white70 : Colors.cyanAccent,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isUser ? "You" : "ATC Agent",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: isUser ? Colors.white70 : Colors.cyanAccent,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 12, color: Colors.grey),
+                  constraints: const BoxConstraints(),
+                  padding: EdgeInsets.zero,
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: msg.text));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Copied to clipboard"), duration: Duration(seconds: 1)),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            isUser
+                ? SelectableText(
+              msg.text,
+              style: const TextStyle(fontSize: 14, height: 1.4, color: Colors.white),
+            )
+                : MarkdownBody(
+              data: msg.text,
+              styleSheet: MarkdownStyleSheet(
+                p: const TextStyle(fontSize: 14, height: 1.4, color: Colors.white70),
+                strong: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                code: const TextStyle(
+                  backgroundColor: Colors.black54,
+                  fontFamily: 'monospace',
+                  fontSize: 13,
+                  color: Colors.cyanAccent,
+                ),
+                codeblockDecoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home/home_screen.dart';
-import 'chat/chat_screen.dart';
+import 'ai_tutor/ai_tutor_screen.dart';
 import 'profile/profile_screen.dart';
 import 'settings/settings_screen.dart';
 
@@ -16,7 +16,7 @@ class _MainLayoutState extends State<MainLayout> {
 
   final List<Widget> _screens = const [
     HomeScreen(),
-    ChatScreen(),
+    AiTutorScreen(),
     ProfileScreen(),
     SettingsScreen(),
   ];
@@ -39,8 +39,8 @@ class _MainLayoutState extends State<MainLayout> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            activeIcon: Icon(Icons.chat_bubble),
+            icon: Icon(Icons.smart_toy_outlined),
+            activeIcon: Icon(Icons.smart_toy),
             label: 'AI Tutor',
           ),
           BottomNavigationBarItem(

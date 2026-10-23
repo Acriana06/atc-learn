@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Make sure this path matches your ProgressProvider location
 import 'providers/progress_provider.dart';
 import 'views/main_layout.dart';
 import 'views/auth/login_screen.dart';
