@@ -1,137 +1,100 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
-import '../../main.dart'; // Import main.dart for ATCLearnApp.themeNotifier
-import 'package:atc_learn/views/modules/module_detail_screen.dart';
-import '../progress/progress_screen.dart';
-import '../auth/login_screen.dart';
+import '../../services/app_state.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  final List<Map<String, String>> sampleModules = const [
-    {
-      'title': 'Aerodrome Control',
-      'desc': 'Tower procedures, runway operations, and ground movement.',
-      'lessons': '5 Lessons'
-    },
-    {
-      'title': 'Airspace Management',
-      'desc': 'Classes of airspace, separation standards, and routing.',
-      'lessons': '4 Lessons'
-    },
-    {
-      'title': 'Aviation Meteorology',
-      'desc': 'Weather patterns, METARs, TAFs, and hazardous weather.',
-      'lessons': '6 Lessons'
-    },
-  ];
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    AppStateManager.instance.addListener(_updateView);
+  }
+
+  @override
+  void dispose() {
+    AppStateManager.instance.removeListener(_updateView);
+    super.dispose();
+  }
+
+  void _updateView() => setState(() {});
 
   @override
   Widget build(BuildContext context) {
+    final state = AppStateManager.instance;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDarkMode ? const Color(0xFF141936) : Colors.white;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('ATC Learn - Study Modules'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            tooltip: 'Account',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const LoginScreen(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.bar_chart),
-            tooltip: 'View Progress',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProgressScreen(),
-                ),
-              );
-            },
-          ),
-          // Dynamic theme toggle icon that updates when clicked
-          ValueListenableBuilder<ThemeMode>(
-            valueListenable: ATCLearnApp.themeNotifier,
-            builder: (context, currentMode, child) {
-              final isDark = currentMode == ThemeMode.dark;
-              return IconButton(
-                icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-                tooltip: 'Toggle Theme',
-                onPressed: () {
-                  ATCLearnApp.themeNotifier.value =
-                  isDark ? ThemeMode.light : ThemeMode.dark;
-                },
-              );
-            },
-          ),
-        ],
-      ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: sampleModules.length,
-        itemBuilder: (context, index) {
-          final module = sampleModules[index];
+    final activeCourses = state.allCourses.where((c) => (c['status'] ?? 'Not Started') != 'Not Started').toList();
+
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        // Live Metrics Header
+        Row(
+          children: [
+            Expanded(child: _metricCard('Completed', '${state.completedCoursesCount} / ${state.allCourses.length}', Icons.task_alt, Colors.cyan, cardBg)),
+            const SizedBox(width: 10),
+            Expanded(child: _metricCard('Study Hours', '${state.totalStudyHours.toStringAsFixed(1)}h', Icons.timer_outlined, Colors.orangeAccent, cardBg)),
+            const SizedBox(width: 10),
+            Expanded(child: _metricCard('Pass Rate', '${state.overallPassRate.toStringAsFixed(1)}%', Icons.verified, Colors.green, cardBg)),
+          ],
+        ),
+        const SizedBox(height: 20),
+        const Text('Enrolled & Active Courses', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        ...activeCourses.map((course) {
+          final double progress = (course['progress'] ?? 0.0).toDouble();
+          final int progressPct = (progress * 100).toInt();
+
           return Card(
-            elevation: 2,
-            margin: const EdgeInsets.only(bottom: 16.0),
-            // Make the card background theme-aware
-            color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              // Optional: add a subtle border in dark mode for extra definition
-              side: isDarkMode
-                  ? BorderSide(color: Colors.white.withOpacity(0.1), width: 1)
-                  : BorderSide.none,
-            ),
+            color: cardBg,
+            margin: const EdgeInsets.only(bottom: 10),
             child: ListTile(
-              contentPadding: const EdgeInsets.all(16.0),
-              title: Text(
-                module['title']!,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  // Explicitly switches between custom primary color and high-contrast white
-                  color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                ),
-              ),
+              title: Text(course['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: Padding(
-                padding: const EdgeInsets.only(top: 8.0),
+                padding: const EdgeInsets.only(top: 4.0),
                 child: Text(
-                  module['desc']!,
-                  style: TextStyle(
-                    // Explicitly switches subtitle contrast based on mode
-                    color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
-                  ),
+                  'Status: ${course['status'] ?? 'In Progress'} | Progress: $progressPct%',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ),
-              trailing: Chip(
-                label: Text(module['lessons']!),
-                backgroundColor: AppColors.secondary.withOpacity(0.1),
-                labelStyle: const TextStyle(color: AppColors.secondary),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ModuleDetailScreen(
-                      moduleTitle: module['title']!,
-                      moduleDescription: module['desc']!,
-                    ),
-                  ),
-                );
-              },
+              trailing: const Icon(Icons.chevron_right),
             ),
           );
-        },
+        }),
+        if (activeCourses.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Text(
+              'No courses started yet. Head over to the ICAO Courses tab to enroll!',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _metricCard(String label, String value, IconData icon, Color accent, Color cardBg) {
+    return Card(
+      color: cardBg,
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: accent, size: 20),
+            const SizedBox(height: 8),
+            Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 2),
+            Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+          ],
+        ),
       ),
     );
   }
