@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'home/home_screen.dart';
 import 'modules/module_list_screen.dart';
 import 'ai_tutor/ai_tutor_screen.dart';
-import 'analytics/analytics_screen.dart';
+import '../views/progress/progress_screen.dart';
 import 'profile/profile_screen.dart';
 import 'settings/settings_screen.dart';
+import '../providers/progress_provider.dart';
 
 class MainLayoutScreen extends StatefulWidget {
   const MainLayoutScreen({Key? key}) : super(key: key);
@@ -20,7 +24,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     HomeScreen(),
     ModuleListScreen(),
     AiTutorChatScreen(),
-    AnalyticsScreen(),
+    ProgressScreen(),
     ProfileScreen(),
     SettingsScreen(),
   ];
@@ -35,10 +39,27 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Listen to Supabase Auth state changes (Sign In / Sign Out)
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (mounted) {
+        // Trigger data fetch for user metrics on auth change
+        if (data.session != null) {
+          Provider.of<ProgressProvider>(context, listen: false).loadUserProgress();
+        }
+        setState(() {}); // Rebuild layout to reflect auth change
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final drawerBg = isDarkMode ? const Color(0xFF0A0D1E) : Colors.white;
     final drawerTextColor = isDarkMode ? Colors.white : Colors.black87;
+
+    final currentUser = Supabase.instance.client.auth.currentUser;
 
     return Scaffold(
       appBar: AppBar(
@@ -49,11 +70,17 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const UserAccountsDrawerHeader(
-              decoration: BoxDecoration(color: Color(0xFF090C9B)),
-              accountName: Text('Cadet Captain Tadesse', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-              accountEmail: Text('EAA • Air Traffic Control Trainee', style: TextStyle(color: Colors.white70, fontSize: 12)),
-              currentAccountPicture: CircleAvatar(
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(color: Color(0xFF090C9B)),
+              accountName: Text(
+                currentUser != null ? 'Cadet Captain' : 'Guest Cadet',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+              accountEmail: Text(
+                currentUser?.email ?? 'EAA • Air Traffic Control Trainee',
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              currentAccountPicture: const CircleAvatar(
                 backgroundColor: Color(0xFF3D52D5),
                 child: Icon(Icons.person, color: Colors.white, size: 32),
               ),
