@@ -1,16 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../constants/app_colors.dart';
 import '../../services/app_state.dart';
+import '../../services/local_curriculum_repository.dart';
+import '../../providers/progress_provider.dart';
 
 class ModuleDetailScreen extends StatefulWidget {
-  final Map<String, dynamic> courseData;
+  final String courseId;
+  final String moduleId;
 
   const ModuleDetailScreen({
     super.key,
-    required this.courseData,
+    required this.courseId,
+    required this.moduleId,
   });
 
   @override
@@ -35,7 +40,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
         final elapsed = _stopwatch.elapsed.inSeconds;
         if (elapsed > 2) {
           AppStateManager.instance.recordStudyTime(
-            widget.courseData['id'],
+            widget.courseId,
             elapsed,
           );
           _showSnackBar('Saved ${elapsed}s of recorded study time!');
@@ -58,7 +63,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
       final elapsed = _stopwatch.elapsed.inSeconds;
       if (elapsed > 2) {
         AppStateManager.instance.recordStudyTime(
-          widget.courseData['id'],
+          widget.courseId,
           elapsed,
         );
       }
@@ -66,7 +71,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
     super.dispose();
   }
 
-  Future<void> _generateAndStartQuiz() async {
+  Future<void> _generateAndStartQuiz(String courseTitle, String contentSummary) async {
     setState(() => _isLoadingQuiz = true);
 
     try {
@@ -75,8 +80,8 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
       final response = await Supabase.instance.client.functions.invoke(
         'quiz-generator',
         body: {
-          'courseTitle': widget.courseData['title'],
-          'courseContent': widget.courseData['full_content'] ?? widget.courseData['description'],
+          'courseTitle': courseTitle,
+          'courseContent': contentSummary,
         },
       );
 
@@ -85,7 +90,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
       if (response.status == 200 && response.data != null) {
         final List dynamicQuiz = response.data['quiz'] ?? [];
         if (dynamicQuiz.isNotEmpty) {
-          _showQuizModal(dynamicQuiz);
+          _showQuizModal(courseTitle, dynamicQuiz);
         } else {
           _showSnackBar('Could not generate quiz questions right now.');
         }
@@ -103,7 +108,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _showQuizModal(List questions) {
+  void _showQuizModal(String courseTitle, List questions) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -112,8 +117,9 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => InteractiveQuizSheet(
-        courseId: widget.courseData['id'],
-        courseCode: widget.courseData['code'] ?? '',
+        courseId: widget.courseId,
+        moduleId: widget.moduleId,
+        courseCode: courseTitle,
         questions: questions,
       ),
     );
@@ -124,11 +130,40 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
 
-    final title = widget.courseData['title'] ?? 'Module Detail';
-    final code = widget.courseData['code'] ?? '';
+    // 1. Fetch data locally from your LocalCurriculumRepository
+    const repository = LocalCurriculumRepository();
+    final course = repository.getCourseById(widget.courseId);
 
-    final rawContent = widget.courseData['full_content'] ?? widget.courseData['description'] ?? 'No content available.';
-    final fullContent = rawContent.replaceAll(r'\n', '\n');
+    if (course == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Error')),
+        body: const Center(child: Text('Course not found in local repository.')),
+      );
+    }
+
+    final module = course.modules.firstWhere(
+          (m) => m.id == widget.moduleId,
+      orElse: () => ModuleContent(id: '', title: 'Module Not Found', lessons: []),
+    );
+
+    // Build a combined Markdown string out of all lessons in this module
+    final buffer = StringBuffer();
+    buffer.writeln('# ${module.title}\n');
+    buffer.writeln('> *AI Tutor Guardrail:* ${course.aiTutorGuardrail}\n');
+
+    for (int i = 0; i < module.lessons.length; i++) {
+      final lesson = module.lessons[i];
+      buffer.writeln('## Lesson ${i + 1}: ${lesson.title}\n');
+      buffer.writeln('${lesson.content}\n');
+      buffer.writeln('**Key Takeaways:**');
+      for (var kp in lesson.keyPoints) {
+        buffer.writeln('- $kp');
+      }
+      buffer.writeln('\n> **Practical Example:** *${lesson.example}*\n');
+      buffer.writeln('---\n');
+    }
+
+    final fullContent = buffer.toString();
 
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     final minutesStr = twoDigits(_stopwatch.elapsed.inMinutes.remainder(60));
@@ -136,7 +171,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(code.isNotEmpty ? '$code: $title' : title),
+        title: Text('${course.title}: ${module.title}'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -227,7 +262,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
                   backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                onPressed: _isLoadingQuiz ? null : _generateAndStartQuiz,
+                onPressed: _isLoadingQuiz ? null : () => _generateAndStartQuiz(course.title, fullContent),
                 icon: _isLoadingQuiz
                     ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.auto_awesome, color: Colors.white),
@@ -247,12 +282,14 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
 /// Interactive Bottom Sheet Widget for Taking the Quiz
 class InteractiveQuizSheet extends StatefulWidget {
   final String courseId;
+  final String moduleId;
   final String courseCode;
   final List questions;
 
   const InteractiveQuizSheet({
     super.key,
     required this.courseId,
+    required this.moduleId,
     required this.courseCode,
     required this.questions,
   });
@@ -274,13 +311,28 @@ class _InteractiveQuizSheetState extends State<InteractiveQuizSheet> {
     return count;
   }
 
-  void _finishAssessment() {
+  void _finishAssessment() async {
+    // 1. Save score to Supabase via ProgressProvider
+    try {
+      await Provider.of<ProgressProvider>(context, listen: false).recordQuizAttempt(
+        widget.moduleId,
+        _score,
+        widget.questions.length,
+      );
+    } catch (e) {
+      debugPrint('Error recording quiz attempt to Supabase: $e');
+    }
+
+    // 2. Track in local AppStateManager
     AppStateManager.instance.recordQuizResult(
       widget.courseId,
       _score,
       widget.questions.length,
     );
-    Navigator.pop(context);
+
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 
   @override

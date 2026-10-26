@@ -31,19 +31,19 @@ serve(async (req) => {
     }
 
     const systemPrompt = `
-    You are an expert aviation examiner and ICAO curriculum instructor.
-    Generate a 10-question multiple-choice quiz based strictly on the provided course material.
+You are an expert aviation examiner and ICAO curriculum instructor.
+Generate a 10-question multiple-choice quiz based strictly on the provided course material.
 
-    Output MUST be a valid JSON object with a "quiz" key containing an array of 10 objects. Format:
+Output MUST be a valid JSON object ONLY, with a "quiz" key containing an array of 10 objects. Do not wrap in extra text, but markdown code blocks are acceptable as they will be cleaned. Format:
+{
+  "quiz": [
     {
-      "quiz": [
-        {
-          "question": "Question text here?",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctIndex": 0
-        }
-      ]
+      "question": "Question text here?",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctIndex": 0
     }
+  ]
+}
     `;
 
     const userPrompt = `Course Title: ${courseTitle}\n\nContent:\n${courseContent}`;
@@ -55,13 +55,13 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-oss-20b",
+        model: "openai/gpt-oss-20b", // <--- Guaranteed supported production Groq model
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
         temperature: 0.3,
-        response_format: { type: "json_object" }
+        // response_format removed to prevent strict cloud validation errors; handled via code cleanup below
       }),
     });
 
