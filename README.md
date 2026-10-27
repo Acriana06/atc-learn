@@ -1,33 +1,30 @@
-# ATC Learn
+# ATC Learn 
 
-ATC Learn is a Flutter-based mobile application designed to support Air Traffic Control trainees at EATCA.
+**ATC Learn** is an advanced, interactive training and revision terminal developed by **Acrosia Tamrat** to support Air Traffic Control trainees at the **Ethiopian Civil Aviation Authority (ECAA)**.
 
-It provides interactive study modules, practice quizzes, instant feedback, and progress tracking to help trainees revise course content and identify weak areas.
+The platform is built strictly in alignment with International Civil Aviation Organization (ICAO) standards and Doc 4444 rules, providing trainees with structured curriculum tracks, AI-assisted study guidance, dynamic quizzes, and real-time performance analytics.
 
 ## Features
 
-- Trainee login and profile
-- Study modules and short lessons
-- Multiple-choice quizzes
-- Instant answer explanations
-- Progress tracking by module
-- Instructor question management
-- Mock exam mode (planned)
-- Offline revision support (planned)
+- **Trainee Authentication & Profile Management:** Secure login and profile tracking for ECAA trainees.
+- **ICAO Course Curriculum:** Modular learning tracks covering Basic ATS, Aerodrome Control, Approach Control, and Area Control.
+- **AI ATC Study Assistant:** Integrated AI study companion grounded in ICAO separation rules and phraseology.
+- **Dynamic Quizzes & Assessments:** Multi-question tests with instant score computation and database saving.
+- **Trainee Progress & Metrics Dashboard:** Real-time course-level metric aggregation, proficiency gauges, and progress bars.
+- **Theme Adaptability:** Seamless Light and Dark mode toggles optimized for operational training environments.
 
 ## Technology Stack
 
-- Flutter
-- Dart
-- Firebase Authentication
-- Cloud Firestore
-- Provider
-- Android Studio
+- **Frontend:** Flutter (Web & Android)
+- **State Management:** Provider Pattern
+- **Backend & Database:** Supabase (PostgreSQL, Row Level Security)
+- **Serverless Logic:** Supabase Edge Functions (AI Integration)
+- **Version Control:** Git
 
 ## Project Status
 
-Under development.
+**Version 2.0 (Production Release):** Fully implemented, schema-optimized, and verified with successful web and mobile release builds.
 
 ## Disclaimer
 
-This application is a training and revision support tool. It is not intended for live air traffic control operations or official certification assessment.
+This application is a training and revision support tool for ECAA trainees. It is not intended for live air traffic control operations or official certification assessment.
