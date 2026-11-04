@@ -1,37 +1,70 @@
-# ATC Learn 
+<h1 align="center">ATC Learn ✈️</h1>
 
-**ATC Learn** is an advanced, interactive training and revision terminal developed by **Acrosia Tamrat** to support Air Traffic Control trainees at the **Ethiopian Civil Aviation Authority (ECAA)**.
+<p align="center">
+  An educational and revision platform for Air Traffic Control students.
+</p>
 
-The platform is built strictly in alignment with International Civil Aviation Organization (ICAO) standards and Doc 4444 rules, providing trainees with structured curriculum tracks, AI-assisted study guidance, dynamic quizzes, and real-time performance analytics.
+<p align="center">
+  Built with Flutter • Dart • Supabase • Groq API
+</p>
 
-## Submission Details
-* **1. GitHub Repository Link:** [Insert your GitHub repository URL here]
-* **2. Video Presentation:** [Insert your Google Drive shareable link here - make sure sharing is set to "Anyone with the link can view"]
-* **3. Team Information:**
-  * **Acrosia Tamrat** | CTC ID: CTC-1795-26
+---
 
-## Features & Screens
+## About
 
-- **Authentication Gate & Login (`views/auth/`):** Stream-based login and session handling via Supabase Auth state listening.
-- **Home Screen (`views/home/`):** Primary trainee landing hub displaying active study tracks, session shortcuts, and feature navigation.
-- **ICAO Course Curriculum (`views/modules/`):** Modular learning tracks covering Basic ATS, Aerodrome Control, Approach Control, and Area Control (CRS-01 through CRS-09), served locally for zero latency.
-- **AI ATC Study Assistant (`views/ai_tutor/`):** Integrated AI study companion powered by serverless Deno Edge Functions, grounded in ICAO separation rules and phraseology.
-- **Dynamic Quizzes & Assessments (`views/quiz/`):** Multi-question tests with instant score computation, database saving, and automated evaluation generation via Edge Functions.
-- **Trainee Progress & Metrics Dashboard (`views/analytics/`):** Real-time course-level metric aggregation, proficiency gauges, and progress bars recording quiz results and scores.
-- **Profile Screen (`views/profile/`):** Displays cadet credentials, CTC ID details, course enrollment status, and training history.
-- **Settings Screen & Theme Adaptability (`views/settings/`):** Manages app preferences, local storage, and seamless Light/Radar Dark mode toggles optimized for operational training environments.
-## Technology Stack
+ATC Learn is an individual project developed by **Acrosia Tamrat** to support Air Traffic Control students in their learning and revision.
 
-- **Frontend:** Flutter (Web & Android)
-- **Architecture & State Management:** Clean Architecture folder structure with Provider Pattern
-- **Backend & Database:** Supabase (PostgreSQL, Row Level Security)
-- **Serverless Logic:** Supabase Edge Functions (AI Integration & Quiz Generation)
-- **Version Control:** Git
+The application brings together course materials, interactive quizzes, AI-assisted study support, and progress tracking in one place.
 
-## Project Status
+## Features
 
-**Version 2.0 (Production Release):** Fully implemented, schema-optimized, and verified with successful web and mobile release builds.
+**01. Dashboard**
+- Main application overview and navigation.
 
-## Disclaimer
+**02. ICAO Courses**
+- Nine courses, from CRS-01 to CRS-09.
+- Organized modules, lessons, and learning materials.
 
-This application is a training and revision support tool for ECAA trainees. It is not intended for live air traffic control operations or official certification assessment.
+**03. AI Tutor**
+- Chat-based AI learning assistance.
+- Powered by Groq API.
+
+**04. Quiz Generation**
+- Generates multiple-choice questions from lesson content.
+- AI-powered question generation through Supabase Edge Functions.
+- Automatic score calculation.
+
+**05. Progress Metrics**
+- Records quiz attempts and scores.
+- Displays learning progress and performance.
+
+**06. Profile & Settings**
+- User account information and application preferences.
+
+## Technologies
+
+| Technology | Usage |
+|---|---|
+| Flutter & Dart | Application development |
+| Provider | State management |
+| Supabase | Authentication and backend |
+| PostgreSQL | Database |
+| Supabase Edge Functions | Server-side operations |
+| Groq API | AI integration |
+| Git & GitHub | Version control |
+
+## Project Links
+
+- **Repository:** [ATC Learn](https://github.com/Acriana06/atc-learn)
+- **Video Presentation:** [Watch the presentation](YOUR_GOOGLE_DRIVE_LINK)
+
+## Developer
+
+**Acrosia Tamrat**  
+CTC ID: CTC-1795-26  
+Project Type: Individual Project  
+Year: 2026
+
+---
+
+> **Disclaimer:** ATC Learn is designed for educational and revision purposes. It is not an official ICAO publication or certification platform and is not intended for live air traffic control operations.
