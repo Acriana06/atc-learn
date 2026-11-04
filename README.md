@@ -56,7 +56,7 @@ The application brings together course materials, interactive quizzes, AI-assist
 ## Project Links
 
 - **Repository:** [ATC Learn](https://github.com/Acriana06/atc-learn)
-- **Video Presentation:** [Watch the presentation](YOUR_GOOGLE_DRIVE_LINK)
+- **Video Presentation:** [Watch the presentation](https://drive.google.com/file/d/1O1o7HflBUAIAlrWmgAzhqJZh6mphI_wh/view?usp=sharing)
 
 ## Developer
 
