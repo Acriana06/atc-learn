@@ -16,7 +16,7 @@ void main() async {
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJib2ljcmVxY2l0d2pwemJpZ3BhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExMzM1ODQsImV4cCI6MjEwNjcwOTU4NH0.RquMeMU_2lU6CUwRplsVkZJ6XsJWUcDe-X0t5BSDCu4',
   );
 
-  // 2. Fetch all official ICAO courses from Supabase on startup
+  //  Fetch all official ICAO courses from Supabase on startup
   await AppStateManager.instance.fetchCoursesFromSupabase();
 
   runApp(const ATCLearnApp());
@@ -31,7 +31,7 @@ class ATCLearnApp extends StatelessWidget {
     // Check if an active user session already exists on device storage
     final session = Supabase.instance.client.auth.currentSession;
 
-    // 🚀 Wrap the entire app in MultiProvider so ALL screens can access ProgressProvider
+    //  Wrap the entire app in MultiProvider so ALL screens can access ProgressProvider
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ProgressProvider()),
