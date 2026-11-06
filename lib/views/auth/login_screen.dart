@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../constants/app_colors.dart';
-import '../main_layout.dart'; // Make sure this import matches your project structure
-
+import '../main_layout.dart'; 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -36,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       if (_isSignUp) {
-        // Register new Cadet with Supabase Auth
+        // register new Cadet with Supabase Auth
         final AuthResponse response = await Supabase.instance.client.auth.signUp(
           email: email,
           password: password,
@@ -54,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         }
       } else {
-        // Authenticate Cadet with Supabase Auth
+        // authenticate Cadet with Supabase Auth
         await Supabase.instance.client.auth.signInWithPassword(
           email: email,
           password: password,
@@ -68,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
 
-          // 🚀 Cleanly navigate to the Main Dashboard and remove login from stack
+          // cleanly navigate to the main ddashboard and remove login from stack
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (context) => const MainLayoutScreen(),
@@ -132,7 +131,6 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // --- AVIATION LOGO & BRANDING ---
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
