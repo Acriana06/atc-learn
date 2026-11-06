@@ -130,7 +130,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
 
-    // 1. Fetch data locally from your LocalCurriculumRepository
+    // 1. Fetch data locally from LocalCurriculumRepository 
     const repository = LocalCurriculumRepository();
     final course = repository.getCourseById(widget.courseId);
 
@@ -279,7 +279,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
   }
 }
 
-/// Interactive Bottom Sheet Widget for Taking the Quiz
+/// Interactive Bottom Sheet Widget so students can take the quiz
 class InteractiveQuizSheet extends StatefulWidget {
   final String courseId;
   final String moduleId;
