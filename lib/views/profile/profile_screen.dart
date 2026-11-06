@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../auth/login_screen.dart'; // Adjust path if necessary
+import '../auth/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -24,7 +24,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill with Supabase current user email if available, otherwise fall back to mock
     final currentUser = Supabase.instance.client.auth.currentUser;
     _nameController = TextEditingController(text: 'Cadet Captain Tadesse');
     _emailController = TextEditingController(text: currentUser?.email ?? 'tadesse.atc@eaa.edu.et');
@@ -101,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const LoginScreen()),
-              (route) => false, // Clears navigation stack so cadet can't go back
+              (route) => false, 
         );
       }
     }
