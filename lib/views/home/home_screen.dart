@@ -32,17 +32,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      // No duplicate AppBar here since the main layout wrapper handles navigation/appbar
       body: Consumer<ProgressProvider>(
         builder: (context, progressProvider, child) {
           if (progressProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Aggregate progress by Course ID
+          // aggregate progress by Course ID
           final progressMap = progressProvider.allProgress;
 
-          // Filter courses that have actual attempts or study time
+          // filter courses that have actual attempts or study time
           final startedCourses = allCourses.where((course) {
             return course.modules.any((module) {
               final match = progressMap.where((p) => p.moduleId == module.id).toList();
